@@ -6,11 +6,9 @@
 
 <title>Hitster</title>
 
-<!-- PWA -->
 <link rel="manifest" href="/Hitster-diy/manifest.json">
 <meta name="theme-color" content="#ff2ea6">
 
-<!-- iOS App Feeling -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Hitster">
@@ -27,20 +25,44 @@ body {
   text-align:center;
 }
 
-/* Splash */
+/* SPLASH */
 #splash {
-  position:fixed;
-  inset:0;
-  background: radial-gradient(circle,#2a003f,#000);
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #2a003f, #000);
   display:flex;
   justify-content:center;
   align-items:center;
   flex-direction:column;
   z-index:9999;
+  animation: bgPulse 2s infinite alternate;
 }
-#splash.hidden { opacity:0; transition:0.5s; }
 
-/* Logo */
+#splash h1 {
+  font-size: 42px;
+  color:#ff2ea6;
+  text-shadow: 0 0 20px #ff2ea6, 0 0 40px #ff2ea6;
+  animation: logoIn 0.8s ease-out;
+}
+
+#splash.hidden {
+  opacity:0;
+  transition:0.6s;
+  pointer-events:none;
+}
+
+/* ANIMATIONS */
+@keyframes logoIn {
+  0% { transform: scale(0.6); opacity:0; }
+  100% { transform: scale(1); opacity:1; }
+}
+
+@keyframes bgPulse {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.2); }
+}
+
+/* UI */
 .logo {
   font-size:40px;
   color:#ff2ea6;
@@ -48,7 +70,6 @@ body {
   margin-top:40px;
 }
 
-/* Speaker */
 .speaker {
   width:200px;
   height:200px;
@@ -57,7 +78,6 @@ body {
   background:radial-gradient(circle,#777,#111);
 }
 
-/* Buttons */
 button {
   width:80%;
   padding:16px;
@@ -66,14 +86,13 @@ button {
   font-size:18px;
   margin:10px;
 }
+
 .play { background:#ff2ea6; }
 .secondary { background:#333; }
 
-/* Screens */
 #app { display:none; padding:20px; }
 #reader { width:100%; border-radius:16px; }
 
-/* Card */
 .card {
   margin-top:15px;
   padding:15px;
@@ -87,15 +106,14 @@ button {
 
 <!-- SPLASH -->
 <div id="splash">
-  <h1 style="color:#ff2ea6">HITSTER</h1>
-  <p>Loading...</p>
+  <h1>HITSTER</h1>
+  <p>Loading your party...</p>
 </div>
 
 <!-- HOME -->
 <div id="home">
   <div class="logo">HITSTER</div>
   <div class="speaker"></div>
-
   <button class="play" onclick="startApp()">JETZT SPIELEN</button>
 </div>
 
@@ -112,11 +130,17 @@ button {
 <script>
 let html5QrCode;
 
-// Splash
+// Splash Animation
 window.addEventListener("load", () => {
-  setTimeout(()=>{
-    document.getElementById("splash").classList.add("hidden");
-  },800);
+  const splash = document.getElementById("splash");
+
+  setTimeout(() => {
+    splash.classList.add("hidden");
+
+    setTimeout(() => {
+      splash.style.display = "none";
+    }, 600);
+  }, 1200);
 });
 
 // Start
@@ -146,10 +170,11 @@ function handleQR(text){
   let link = parts[0];
   let title = parts[1] || "Unknown";
   let artist = parts[2] || "";
+
   showResult(link,title,artist);
 }
 
-// Anzeige + Spotify
+// Anzeige
 function showResult(link,title,artist){
   let id = link.match(/track\/([a-zA-Z0-9]+)/)?.[1];
 
