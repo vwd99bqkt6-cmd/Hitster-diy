@@ -22,7 +22,8 @@
       font-size: 18px;
       border: none;
       border-radius: 10px;
-      background: #00ffcc;
+      background: #1DB954;
+      color: white;
       cursor: pointer;
     }
   </style>
@@ -37,21 +38,52 @@
 <button onclick="startScanner()">Scanner starten</button>
 
 <script>
+function openSpotify(link) {
+  try {
+    // Track-ID extrahieren
+    let match = link.match(/track\/([a-zA-Z0-9]+)/);
+    if (!match) {
+      window.location.href = link;
+      return;
+    }
+
+    let trackId = match[1];
+
+    // Deep Link (öffnet App direkt)
+    let appLink = "spotify:track:" + trackId;
+
+    // Fallback nach 1 Sekunde auf Web
+    setTimeout(() => {
+      window.location.href = link;
+    }, 1000);
+
+    // Versuch App zu öffnen
+    window.location.href = appLink;
+
+  } catch (e) {
+    window.location.href = link;
+  }
+}
+
 function startScanner() {
   const html5QrCode = new Html5Qrcode("reader");
 
-  html5QrCode.start(
-    { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: 250
-    },
-    (decodedText) => {
-      window.open(decodedText, "_blank");
-      html5QrCode.stop();
-    },
-    (error) => {}
-  );
+  Html5Qrcode.getCameras().then(devices => {
+    if (devices.length) {
+      let cameraId = devices[0].id;
+
+      html5QrCode.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          html5QrCode.stop();
+          openSpotify(decodedText);
+        }
+      );
+    }
+  }).catch(err => {
+    alert("Kamerafehler: " + err);
+  });
 }
 </script>
 
