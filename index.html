@@ -19,6 +19,7 @@ h1 { margin-bottom: 10px; }
 #reader {
   width: 300px;
   margin: auto;
+  margin-top: 15px;
 }
 
 button {
@@ -31,18 +32,26 @@ button {
 }
 
 .play { background: #1DB954; color: white; }
+.scan { background: #2196f3; color: white; }
 .next { background: #ff9800; color: white; }
 
 .timeline {
-  margin-top: 20px;
+  margin-top: 25px;
   padding: 10px;
   background: rgba(255,255,255,0.1);
   border-radius: 10px;
 }
 
 .song {
-  padding: 5px;
+  padding: 6px;
   border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin-top: 10px;
 }
 </style>
 </head>
@@ -54,35 +63,39 @@ button {
 
 <div id="reader"></div>
 
-<button onclick="startScanner()">📷 Scannen</button>
+<button class="scan" onclick="startScanner()">📷 Scannen</button>
 
 <div id="result"></div>
 
 <div class="timeline">
-  <h3>📅 Deine Timeline</h3>
+  <h3>📅 Timeline</h3>
   <div id="timeline"></div>
 </div>
 
 <script>
 let timeline = [];
 
+// 📷 Kamera starten (RÜCKKAMERA FIX)
 function startScanner() {
   const html5QrCode = new Html5Qrcode("reader");
 
-  Html5Qrcode.getCameras().then(devices => {
-    let cameraId = devices[0].id;
-
-    html5QrCode.start(
-      cameraId,
-      { fps: 10, qrbox: 250 },
-      (decodedText) => {
-        html5QrCode.stop();
-        showResult(decodedText);
-      }
-    );
+  html5QrCode.start(
+    { facingMode: { exact: "environment" } },
+    {
+      fps: 10,
+      qrbox: { width: 250, height: 250 }
+    },
+    (decodedText) => {
+      html5QrCode.stop();
+      showResult(decodedText);
+    },
+    (error) => {}
+  ).catch(err => {
+    alert("Kamera Fehler: " + err);
   });
 }
 
+// 🎵 Ergebnis anzeigen
 function showResult(link) {
   document.getElementById("result").innerHTML = `
     <p>🎵 Song erkannt</p>
@@ -98,21 +111,30 @@ function showResult(link) {
   `;
 }
 
+// 🎧 Spotify öffnen (iPhone FIX)
 function openSpotify(link) {
   let match = link.match(/track\/([a-zA-Z0-9]+)/);
 
-  if (match) {
-    let id = match[1];
-    window.location.href = "spotify:track:" + id;
-
-    setTimeout(() => {
-      window.location.href = link;
-    }, 800);
-  } else {
+  if (!match) {
     window.location.href = link;
+    return;
   }
+
+  let trackId = match[1];
+
+  // Deep Link (öffnet App)
+  let a = document.createElement("a");
+  a.href = "spotify:track:" + trackId;
+  document.body.appendChild(a);
+  a.click();
+
+  // Fallback
+  setTimeout(() => {
+    window.location.href = link;
+  }, 1000);
 }
 
+// 📅 Timeline hinzufügen
 function addToTimeline(link) {
   let year = document.getElementById("yearInput").value;
 
@@ -121,14 +143,16 @@ function addToTimeline(link) {
     return;
   }
 
-  timeline.push({ year, link });
+  timeline.push({ year: parseInt(year), link });
 
   timeline.sort((a, b) => a.year - b.year);
 
   renderTimeline();
+
   document.getElementById("result").innerHTML = "";
 }
 
+// 📊 Timeline anzeigen
 function renderTimeline() {
   let html = "";
 
