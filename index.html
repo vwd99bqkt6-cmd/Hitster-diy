@@ -2,277 +2,181 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Hitster DIY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="theme-color" content="#111111" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Hitster</title>
+
+<link rel="manifest" href="manifest.json">
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-:root{
-  --bg1:#6a0dad;
-  --bg2:#111;
-  --accent:#1DB954;
-  --blue:#2196f3;
-  --orange:#ff9800;
-  --card:rgba(255,255,255,0.1);
-}
-
-*{box-sizing:border-box}
-html,body{
+body {
   margin:0;
-  height:100%;
-  background:linear-gradient(135deg,var(--bg1),var(--bg2));
-  color:#fff;
-  font-family:Arial;
-}
-
-.app{
-  min-height:100%;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:15px;
-}
-
-h1{margin:10px 0 5px;font-size:20px}
-.sub{font-size:13px;margin-bottom:10px}
-
-.reader-wrap{
-  width:100%;
-  max-width:400px;
-  position:relative;
-  border-radius:15px;
-  overflow:hidden;
-  background:black;
-}
-
-#reader{width:100%}
-
-/* Scan Animation */
-.overlay{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  pointer-events:none;
-}
-
-.frame{
-  width:70%;
-  aspect-ratio:1;
-  border:2px solid white;
-  border-radius:10px;
-  position:relative;
-}
-
-.scan-line{
-  position:absolute;
-  left:0;
-  right:0;
-  height:2px;
-  background:#00ffcc;
-  animation:scan 1.5s linear infinite;
-}
-
-@keyframes scan{
-  0%{top:0}
-  50%{top:100%}
-  100%{top:0}
-}
-
-button{
-  width:90%;
-  max-width:400px;
-  padding:14px;
-  margin:8px;
-  border:none;
-  border-radius:12px;
-  font-size:16px;
+  font-family:-apple-system;
+  background: radial-gradient(circle,#2a003f,#000);
   color:white;
+  text-align:center;
 }
 
-.scan{background:var(--blue)}
-.play{background:var(--accent)}
-.next{background:var(--orange)}
-
-.result{
-  width:90%;
-  max-width:400px;
-  background:var(--card);
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
+/* Logo */
+.logo {
+  font-size:40px;
+  color:#ff2ea6;
+  text-shadow:0 0 20px #ff2ea6;
+  margin-top:40px;
 }
 
-.timeline{
-  width:90%;
-  max-width:400px;
-  margin-top:15px;
-  background:var(--card);
-  padding:10px;
-  border-radius:10px;
+/* Speaker */
+.speaker {
+  width:200px;
+  height:200px;
+  margin:40px auto;
+  border-radius:50%;
+  background:radial-gradient(circle,#777,#111);
 }
 
-.song{
-  padding:6px;
-  border-bottom:1px solid rgba(255,255,255,0.2);
-}
-
-input{
-  width:90%;
-  padding:10px;
-  border-radius:10px;
+/* Buttons */
+button {
+  width:80%;
+  padding:16px;
+  border-radius:16px;
   border:none;
-  margin-top:8px;
+  font-size:18px;
+  margin:10px;
+}
+
+.play { background:#ff2ea6; }
+.secondary { background:#333; }
+
+/* Screens */
+#app { display:none; padding:20px; }
+#reader { width:100%; border-radius:16px; }
+
+/* Card */
+.card {
+  margin-top:15px;
+  padding:15px;
+  border-radius:16px;
+  background:rgba(255,255,255,0.1);
 }
 </style>
 </head>
 
 <body>
 
-<div class="app">
+<!-- HOME -->
+<div id="home">
+  <div class="logo">HITSTER</div>
+  <div class="speaker"></div>
 
-<h1>🎵 Hitster DIY</h1>
-<div class="sub">Scannen → hören → Jahr einordnen</div>
+  <button class="play" onclick="startApp()">JETZT SPIELEN</button>
+</div>
 
-<div class="reader-wrap">
+<!-- APP -->
+<div id="app">
+  <h2>🎵 Scan Song</h2>
+
   <div id="reader"></div>
-  <div class="overlay">
-    <div class="frame">
-      <div class="scan-line"></div>
-    </div>
-  </div>
-</div>
+  <button onclick="startScanner()">📷 Scannen</button>
 
-<button class="scan" onclick="startScanner()">📷 Scannen</button>
-
-<div id="result" class="result" style="display:none;"></div>
-
-<div class="timeline">
-  <h3>📅 Timeline</h3>
-  <div id="timeline"></div>
-</div>
-
+  <div id="result" class="card" style="display:none;"></div>
 </div>
 
 <script>
-let html5QrCode = null;
-let timeline = [];
+let html5QrCode;
 
-// 🔊 Sound
-function beep() {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const o = ctx.createOscillator();
-  const g = ctx.createGain();
-
-  o.connect(g);
-  g.connect(ctx.destination);
-
-  o.frequency.value = 800;
-  o.start();
-
-  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+// Start
+function startApp(){
+  document.getElementById("home").style.display="none";
+  document.getElementById("app").style.display="block";
 }
 
-// 📳 Vibration
-function vibrate() {
-  if (navigator.vibrate) navigator.vibrate(100);
-}
-
-// 📷 Scanner starten
-function startScanner() {
-  beep();
-
+// Scanner
+function startScanner(){
   html5QrCode = new Html5Qrcode("reader");
 
   html5QrCode.start(
-    { facingMode: { exact: "environment" } },
-    { fps: 10, qrbox: 250 },
-    (decodedText) => {
+    { facingMode:"environment" },
+    { fps:10, qrbox:250 },
+    text=>{
       html5QrCode.stop();
-      vibrate();
-      beep();
-      handleQR(decodedText);
+      beep(); vibrate();
+      handleQR(text);
     }
-  ).catch(err => alert("Kamera Fehler: " + err));
+  );
 }
 
-// 🧠 QR auswerten
-function handleQR(text) {
+// QR
+function handleQR(text){
   let parts = text.split("|");
 
   let link = parts[0];
-  let title = parts[1] || "Unbekannt";
+  let title = parts[1] || "Unknown";
   let artist = parts[2] || "";
-  let year = parts[3] || "?";
 
-  showResult(link, title, artist, year);
+  showResult(link,title,artist);
 }
 
-// 🎯 Anzeige
-function showResult(link, title, artist, year) {
-  let el = document.getElementById("result");
-  el.style.display = "block";
+// Anzeige + Cover
+function showResult(link,title,artist){
+  let id = link.match(/track\/([a-zA-Z0-9]+)/)?.[1];
 
-  el.innerHTML = `
+  document.getElementById("result").style.display="block";
+  document.getElementById("result").innerHTML = `
     <h3>${title}</h3>
     <p>${artist}</p>
-    <p>📅 ${year}</p>
+
+    ${id ? `
+      <iframe src="https://open.spotify.com/embed/track/${id}"
+      width="100%" height="80" frameborder="0"></iframe>
+    `:""}
 
     <button class="play" onclick="openSpotify('${link}')">
-      ▶️ Spotify
+      ▶️ Spotify öffnen
     </button>
 
-    <button class="next" onclick="addToTimeline('${year}','${title}')">
-      ➕ Timeline
+    <button class="secondary" onclick="restart()">
+      🔄 Neuer Scan
     </button>
   `;
 }
 
-// 🎧 Spotify öffnen
-function openSpotify(link) {
-  let match = link.match(/track\/([a-zA-Z0-9]+)/);
+// Spotify öffnen
+function openSpotify(link){
+  let id = link.match(/track\/([a-zA-Z0-9]+)/)?.[1];
 
-  if (match) {
-    let id = match[1];
-
-    let a = document.createElement("a");
-    a.href = "spotify:track:" + id;
-    document.body.appendChild(a);
-    a.click();
-
-    setTimeout(() => {
-      window.location.href = link;
-    }, 1000);
+  if(id){
+    window.location = "spotify:track:"+id;
+    setTimeout(()=>window.location=link,800);
   } else {
-    window.location.href = link;
+    window.location = link;
   }
 }
 
-// 📅 Timeline
-function addToTimeline(year, title) {
-  timeline.push({ year: parseInt(year), title });
-
-  timeline.sort((a,b) => a.year - b.year);
-
-  renderTimeline();
-  document.getElementById("result").style.display = "none";
+// Reset
+function restart(){
+  document.getElementById("result").style.display="none";
 }
 
-// 📊 Timeline anzeigen
-function renderTimeline() {
-  let html = "";
+// Sound
+function beep(){
+  let ctx=new AudioContext();
+  let o=ctx.createOscillator();
+  let g=ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.2);
+}
 
-  timeline.forEach(item => {
-    html += `<div class="song">${item.year} - ${item.title}</div>`;
-  });
+// Vibration
+function vibrate(){
+  if(navigator.vibrate) navigator.vibrate(100);
+}
 
-  document.getElementById("timeline").innerHTML = html;
+// Service Worker
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
 }
 </script>
 
