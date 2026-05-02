@@ -1,89 +1,142 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Hitster DIY</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      background: linear-gradient(135deg, #6a0dad, #111);
-      color: white;
-      padding: 20px;
-    }
-    #reader {
-      width: 300px;
-      margin: auto;
-      margin-top: 20px;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      background: #1DB954;
-      color: white;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Hitster DIY Pro</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background: linear-gradient(135deg, #6a0dad, #111);
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+h1 { margin-bottom: 10px; }
+
+#reader {
+  width: 300px;
+  margin: auto;
+}
+
+button {
+  padding: 12px 18px;
+  margin: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.play { background: #1DB954; color: white; }
+.next { background: #ff9800; color: white; }
+
+.timeline {
+  margin-top: 20px;
+  padding: 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+
+.song {
+  padding: 5px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+</style>
 </head>
+
 <body>
 
 <h1>🎵 Hitster DIY</h1>
-<p>QR-Code scannen und Song starten</p>
+<p>Scannen → Song hören → Jahr einordnen</p>
 
 <div id="reader"></div>
 
-<button onclick="startScanner()">Scanner starten</button>
+<button onclick="startScanner()">📷 Scannen</button>
+
+<div id="result"></div>
+
+<div class="timeline">
+  <h3>📅 Deine Timeline</h3>
+  <div id="timeline"></div>
+</div>
 
 <script>
-function openSpotify(link) {
-  try {
-    // Track-ID extrahieren
-    let match = link.match(/track\/([a-zA-Z0-9]+)/);
-    if (!match) {
-      window.location.href = link;
-      return;
-    }
-
-    let trackId = match[1];
-
-    // Deep Link (öffnet App direkt)
-    let appLink = "spotify:track:" + trackId;
-
-    // Fallback nach 1 Sekunde auf Web
-    setTimeout(() => {
-      window.location.href = link;
-    }, 1000);
-
-    // Versuch App zu öffnen
-    window.location.href = appLink;
-
-  } catch (e) {
-    window.location.href = link;
-  }
-}
+let timeline = [];
 
 function startScanner() {
   const html5QrCode = new Html5Qrcode("reader");
 
   Html5Qrcode.getCameras().then(devices => {
-    if (devices.length) {
-      let cameraId = devices[0].id;
+    let cameraId = devices[0].id;
 
-      html5QrCode.start(
-        cameraId,
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-          html5QrCode.stop();
-          openSpotify(decodedText);
-        }
-      );
-    }
-  }).catch(err => {
-    alert("Kamerafehler: " + err);
+    html5QrCode.start(
+      cameraId,
+      { fps: 10, qrbox: 250 },
+      (decodedText) => {
+        html5QrCode.stop();
+        showResult(decodedText);
+      }
+    );
   });
+}
+
+function showResult(link) {
+  document.getElementById("result").innerHTML = `
+    <p>🎵 Song erkannt</p>
+    <button class="play" onclick="openSpotify('${link}')">
+      ▶️ In Spotify öffnen
+    </button>
+    <br>
+    <input id="yearInput" placeholder="Jahr schätzen (z.B. 2005)">
+    <br>
+    <button class="next" onclick="addToTimeline('${link}')">
+      ➕ Zur Timeline hinzufügen
+    </button>
+  `;
+}
+
+function openSpotify(link) {
+  let match = link.match(/track\/([a-zA-Z0-9]+)/);
+
+  if (match) {
+    let id = match[1];
+    window.location.href = "spotify:track:" + id;
+
+    setTimeout(() => {
+      window.location.href = link;
+    }, 800);
+  } else {
+    window.location.href = link;
+  }
+}
+
+function addToTimeline(link) {
+  let year = document.getElementById("yearInput").value;
+
+  if (!year) {
+    alert("Bitte Jahr eingeben");
+    return;
+  }
+
+  timeline.push({ year, link });
+
+  timeline.sort((a, b) => a.year - b.year);
+
+  renderTimeline();
+  document.getElementById("result").innerHTML = "";
+}
+
+function renderTimeline() {
+  let html = "";
+
+  timeline.forEach(item => {
+    html += `<div class="song">${item.year}</div>`;
+  });
+
+  document.getElementById("timeline").innerHTML = html;
 }
 </script>
 
