@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Hitster DIY</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: linear-gradient(135deg, #6a0dad, #111);
+      color: white;
+      padding: 20px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+      margin-top: 20px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: #00ffcc;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🎵 Hitster DIY</h1>
+<p>QR-Code scannen und Song starten</p>
+
+<div id="reader"></div>
+
+<button onclick="startScanner()">Scanner starten</button>
+
+<script>
+function startScanner() {
+  const html5QrCode = new Html5Qrcode("reader");
+
+  html5QrCode.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: 250
+    },
+    (decodedText) => {
+      window.open(decodedText, "_blank");
+      html5QrCode.stop();
+    },
+    (error) => {}
+  );
+}
+</script>
+
+</body>
+</html>
