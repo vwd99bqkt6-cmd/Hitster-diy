@@ -6,7 +6,15 @@
 
 <title>Hitster</title>
 
+<!-- PWA -->
 <link rel="manifest" href="/Hitster-diy/manifest.json">
+<meta name="theme-color" content="#ff2ea6">
+
+<!-- iOS App Feeling -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hitster">
+<link rel="apple-touch-icon" href="/Hitster-diy/icon.png">
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -18,6 +26,19 @@ body {
   color:white;
   text-align:center;
 }
+
+/* Splash */
+#splash {
+  position:fixed;
+  inset:0;
+  background: radial-gradient(circle,#2a003f,#000);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:9999;
+}
+#splash.hidden { opacity:0; transition:0.5s; }
 
 /* Logo */
 .logo {
@@ -45,7 +66,6 @@ button {
   font-size:18px;
   margin:10px;
 }
-
 .play { background:#ff2ea6; }
 .secondary { background:#333; }
 
@@ -64,6 +84,12 @@ button {
 </head>
 
 <body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <h1 style="color:#ff2ea6">HITSTER</h1>
+  <p>Loading...</p>
+</div>
 
 <!-- HOME -->
 <div id="home">
@@ -85,6 +111,13 @@ button {
 
 <script>
 let html5QrCode;
+
+// Splash
+window.addEventListener("load", () => {
+  setTimeout(()=>{
+    document.getElementById("splash").classList.add("hidden");
+  },800);
+});
 
 // Start
 function startApp(){
@@ -110,15 +143,13 @@ function startScanner(){
 // QR
 function handleQR(text){
   let parts = text.split("|");
-
   let link = parts[0];
   let title = parts[1] || "Unknown";
   let artist = parts[2] || "";
-
   showResult(link,title,artist);
 }
 
-// Anzeige + Cover
+// Anzeige + Spotify
 function showResult(link,title,artist){
   let id = link.match(/track\/([a-zA-Z0-9]+)/)?.[1];
 
@@ -129,11 +160,11 @@ function showResult(link,title,artist){
 
     ${id ? `
       <iframe src="https://open.spotify.com/embed/track/${id}"
-      width="100%" height="80" frameborder="0"></iframe>
+      width="100%" height="80"></iframe>
     `:""}
 
     <button class="play" onclick="openSpotify('${link}')">
-      ▶️ Spotify öffnen
+      ▶️ Spotify
     </button>
 
     <button class="secondary" onclick="restart()">
@@ -176,7 +207,7 @@ function vibrate(){
 
 // Service Worker
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js");
+  navigator.serviceWorker.register("/Hitster-diy/sw.js");
 }
 </script>
 
