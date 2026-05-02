@@ -1,187 +1,267 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Hitster DIY Pro</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Hitster DIY</title>
+
+<meta name="theme-color" content="#111111" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-* {
-  box-sizing: border-box;
+:root{
+  --bg1:#6a0dad;
+  --bg2:#111;
+  --accent:#1DB954;
+  --blue:#2196f3;
+  --orange:#ff9800;
+  --card:rgba(255,255,255,0.1);
 }
 
-body {
-  margin: 0;
-  font-family: Arial;
-  background: linear-gradient(135deg, #6a0dad, #111);
-  color: white;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-
-  min-height: 100vh;
-  padding: 15px;
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  height:100%;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  color:#fff;
+  font-family:Arial;
 }
 
-/* Header kompakt */
-h1 {
-  font-size: 22px;
-  margin: 10px 0 5px;
+.app{
+  min-height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:15px;
 }
 
-p {
-  font-size: 14px;
-  margin-bottom: 10px;
+h1{margin:10px 0 5px;font-size:20px}
+.sub{font-size:13px;margin-bottom:10px}
+
+.reader-wrap{
+  width:100%;
+  max-width:400px;
+  position:relative;
+  border-radius:15px;
+  overflow:hidden;
+  background:black;
 }
 
-/* Scanner größer + mittig */
-#reader {
-  width: 90vw;
-  max-width: 320px;
-  margin: 15px auto;
+#reader{width:100%}
+
+/* Scan Animation */
+.overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
 }
 
-/* Buttons groß + klickbar */
-button {
-  width: 90%;
-  max-width: 320px;
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 12px;
-  border: none;
-  font-size: 16px;
+.frame{
+  width:70%;
+  aspect-ratio:1;
+  border:2px solid white;
+  border-radius:10px;
+  position:relative;
 }
 
-/* Farben */
-.play { background: #1DB954; }
-.scan { background: #2196f3; }
-.next { background: #ff9800; }
-
-/* Input full width */
-input {
-  width: 90%;
-  max-width: 320px;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  margin-top: 10px;
+.scan-line{
+  position:absolute;
+  left:0;
+  right:0;
+  height:2px;
+  background:#00ffcc;
+  animation:scan 1.5s linear infinite;
 }
 
-/* Timeline kompakt */
-.timeline {
-  width: 90%;
-  max-width: 320px;
-  margin-top: 20px;
-  padding: 10px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 12px;
+@keyframes scan{
+  0%{top:0}
+  50%{top:100%}
+  100%{top:0}
 }
 
-/* Timeline Einträge */
-.song {
-  padding: 8px;
-  text-align: left;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+button{
+  width:90%;
+  max-width:400px;
+  padding:14px;
+  margin:8px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  color:white;
+}
+
+.scan{background:var(--blue)}
+.play{background:var(--accent)}
+.next{background:var(--orange)}
+
+.result{
+  width:90%;
+  max-width:400px;
+  background:var(--card);
+  padding:10px;
+  border-radius:10px;
+  margin-top:10px;
+}
+
+.timeline{
+  width:90%;
+  max-width:400px;
+  margin-top:15px;
+  background:var(--card);
+  padding:10px;
+  border-radius:10px;
+}
+
+.song{
+  padding:6px;
+  border-bottom:1px solid rgba(255,255,255,0.2);
+}
+
+input{
+  width:90%;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  margin-top:8px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎵 Hitster DIY</h1>
-<p>Scannen → Song hören → Jahr einordnen</p>
+<div class="app">
 
-<div id="reader"></div>
+<h1>🎵 Hitster DIY</h1>
+<div class="sub">Scannen → hören → Jahr einordnen</div>
+
+<div class="reader-wrap">
+  <div id="reader"></div>
+  <div class="overlay">
+    <div class="frame">
+      <div class="scan-line"></div>
+    </div>
+  </div>
+</div>
 
 <button class="scan" onclick="startScanner()">📷 Scannen</button>
 
-<div id="result"></div>
+<div id="result" class="result" style="display:none;"></div>
 
 <div class="timeline">
   <h3>📅 Timeline</h3>
   <div id="timeline"></div>
 </div>
 
+</div>
+
 <script>
+let html5QrCode = null;
 let timeline = [];
 
-// 📷 Kamera starten (RÜCKKAMERA FIX)
+// 🔊 Sound
+function beep() {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+
+  o.connect(g);
+  g.connect(ctx.destination);
+
+  o.frequency.value = 800;
+  o.start();
+
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+}
+
+// 📳 Vibration
+function vibrate() {
+  if (navigator.vibrate) navigator.vibrate(100);
+}
+
+// 📷 Scanner starten
 function startScanner() {
-  const html5QrCode = new Html5Qrcode("reader");
+  beep();
+
+  html5QrCode = new Html5Qrcode("reader");
 
   html5QrCode.start(
     { facingMode: { exact: "environment" } },
-    {
-      fps: 10,
-      qrbox: { width: 250, height: 250 }
-    },
+    { fps: 10, qrbox: 250 },
     (decodedText) => {
       html5QrCode.stop();
-      showResult(decodedText);
-    },
-    (error) => {}
-  ).catch(err => {
-    alert("Kamera Fehler: " + err);
-  });
+      vibrate();
+      beep();
+      handleQR(decodedText);
+    }
+  ).catch(err => alert("Kamera Fehler: " + err));
 }
 
-// 🎵 Ergebnis anzeigen
-function showResult(link) {
-  document.getElementById("result").innerHTML = `
-    <p>🎵 Song erkannt</p>
+// 🧠 QR auswerten
+function handleQR(text) {
+  let parts = text.split("|");
+
+  let link = parts[0];
+  let title = parts[1] || "Unbekannt";
+  let artist = parts[2] || "";
+  let year = parts[3] || "?";
+
+  showResult(link, title, artist, year);
+}
+
+// 🎯 Anzeige
+function showResult(link, title, artist, year) {
+  let el = document.getElementById("result");
+  el.style.display = "block";
+
+  el.innerHTML = `
+    <h3>${title}</h3>
+    <p>${artist}</p>
+    <p>📅 ${year}</p>
+
     <button class="play" onclick="openSpotify('${link}')">
-      ▶️ In Spotify öffnen
+      ▶️ Spotify
     </button>
-    <br>
-    <input id="yearInput" placeholder="Jahr schätzen (z.B. 2005)">
-    <br>
-    <button class="next" onclick="addToTimeline('${link}')">
-      ➕ Zur Timeline hinzufügen
+
+    <button class="next" onclick="addToTimeline('${year}','${title}')">
+      ➕ Timeline
     </button>
   `;
 }
 
-// 🎧 Spotify öffnen (iPhone FIX)
+// 🎧 Spotify öffnen
 function openSpotify(link) {
   let match = link.match(/track\/([a-zA-Z0-9]+)/);
 
-  if (!match) {
+  if (match) {
+    let id = match[1];
+
+    let a = document.createElement("a");
+    a.href = "spotify:track:" + id;
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      window.location.href = link;
+    }, 1000);
+  } else {
     window.location.href = link;
-    return;
   }
-
-  let trackId = match[1];
-
-  // Deep Link (öffnet App)
-  let a = document.createElement("a");
-  a.href = "spotify:track:" + trackId;
-  document.body.appendChild(a);
-  a.click();
-
-  // Fallback
-  setTimeout(() => {
-    window.location.href = link;
-  }, 1000);
 }
 
-// 📅 Timeline hinzufügen
-function addToTimeline(link) {
-  let year = document.getElementById("yearInput").value;
+// 📅 Timeline
+function addToTimeline(year, title) {
+  timeline.push({ year: parseInt(year), title });
 
-  if (!year) {
-    alert("Bitte Jahr eingeben");
-    return;
-  }
-
-  timeline.push({ year: parseInt(year), link });
-
-  timeline.sort((a, b) => a.year - b.year);
+  timeline.sort((a,b) => a.year - b.year);
 
   renderTimeline();
-
-  document.getElementById("result").innerHTML = "";
+  document.getElementById("result").style.display = "none";
 }
 
 // 📊 Timeline anzeigen
@@ -189,7 +269,7 @@ function renderTimeline() {
   let html = "";
 
   timeline.forEach(item => {
-    html += `<div class="song">${item.year}</div>`;
+    html += `<div class="song">${item.year} - ${item.title}</div>`;
   });
 
   document.getElementById("timeline").innerHTML = html;
