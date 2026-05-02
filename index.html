@@ -6,52 +6,84 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
+  margin: 0;
   font-family: Arial;
   background: linear-gradient(135deg, #6a0dad, #111);
   color: white;
-  text-align: center;
-  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+
+  min-height: 100vh;
+  padding: 15px;
 }
 
-h1 { margin-bottom: 10px; }
+/* Header kompakt */
+h1 {
+  font-size: 22px;
+  margin: 10px 0 5px;
+}
 
+p {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* Scanner größer + mittig */
 #reader {
-  width: 300px;
-  margin: auto;
-  margin-top: 15px;
+  width: 90vw;
+  max-width: 320px;
+  margin: 15px auto;
 }
 
+/* Buttons groß + klickbar */
 button {
-  padding: 12px 18px;
-  margin: 10px;
-  border-radius: 10px;
+  width: 90%;
+  max-width: 320px;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 12px;
   border: none;
   font-size: 16px;
-  cursor: pointer;
 }
 
-.play { background: #1DB954; color: white; }
-.scan { background: #2196f3; color: white; }
-.next { background: #ff9800; color: white; }
+/* Farben */
+.play { background: #1DB954; }
+.scan { background: #2196f3; }
+.next { background: #ff9800; }
 
-.timeline {
-  margin-top: 25px;
-  padding: 10px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 10px;
-}
-
-.song {
-  padding: 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
+/* Input full width */
 input {
-  padding: 10px;
-  border-radius: 8px;
+  width: 90%;
+  max-width: 320px;
+  padding: 12px;
+  border-radius: 10px;
   border: none;
   margin-top: 10px;
+}
+
+/* Timeline kompakt */
+.timeline {
+  width: 90%;
+  max-width: 320px;
+  margin-top: 20px;
+  padding: 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+}
+
+/* Timeline Einträge */
+.song {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 </style>
 </head>
